@@ -118,17 +118,17 @@ Esquema estrela com a tabela fato `fato_casco` no centro, conectada a 5 dimensõ
 
 **Ticket médio (top 10 modelos, exposição > 1.000)
 
-#	Modelo	Ticket médio
-1	Volvo Rebocador FH 540 Globetrotter 6x4 E5	R$ 9.867,41
-2	Scania Vabis Caminhão P 310 B 8x2 E5	R$ 8.572,91
-3	Range Rover Sport HSE 3.0 TDV6 Diesel	R$ 8.494,17
-4	Volvo Rebocador FH 460 Globetrotter 6x2 E5	R$ 8.343,77
-5	Scania Vabis Rebocador R 440 A 6x2 E5	R$ 7.116,96
-6	Mercedes Benz Rebocador Axor 2544 S Bluetec 5 6x2	R$ 6.523,24
-7	Atego 2430 6x2 2p (diesel)(E5)	R$ 6.382,95
-8	Hilux SW4 SRX Diamond 4x4 2.8 TB Diesel Aut.	R$ 5.528,25
-9	Volvo Rebocador FH 460 6x2 E5	R$ 5.503,75
-10	Volvo Rebocador FH 540 6x4 E5	R$ 5.370,55
+#	Modelo	Ticket médio  
+1	Volvo Rebocador FH 540 Globetrotter 6x4 E5	R$ 9.867,41  
+2	Scania Vabis Caminhão P 310 B 8x2 E5	R$ 8.572,91  
+3	Range Rover Sport HSE 3.0 TDV6 Diesel	R$ 8.494,17  
+4	Volvo Rebocador FH 460 Globetrotter 6x2 E5	R$ 8.343,77  
+5	Scania Vabis Rebocador R 440 A 6x2 E5	R$ 7.116,96  
+6	Mercedes Benz Rebocador Axor 2544 S Bluetec 5 6x2	R$ 6.523,24  
+7	Atego 2430 6x2 2p (diesel)(E5)	R$ 6.382,95  
+8	Hilux SW4 SRX Diamond 4x4 2.8 TB Diesel Aut.	R$ 5.528,25  
+9	Volvo Rebocador FH 460 6x2 E5	R$ 5.503,75  
+10	Volvo Rebocador FH 540 6x4 E5	R$ 5.370,55  
 
 Entre os 10 modelos com maior ticket médio (considerando apenas modelos com exposição > 1.000), 8 são caminhões/rebocadores pesados (destaque para a marca Volvo, presente em 4 das 10 posições) e apenas 2 são veículos de passeio (Range Rover Sport e Hilux SW4), ambos de alto padrão — coerente com o maior valor segurado desses veículos
 
