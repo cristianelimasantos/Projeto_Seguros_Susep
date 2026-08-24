@@ -58,6 +58,7 @@ Esquema estrela com a tabela fato `fato_casco` no centro, conectada a 5 dimensõ
 | `04_qualidade_e_integridade_dados.sql` | Qualidade de dados | Identifica códigos de dimensão sem correspondência (`LEFT JOIN` + `DISTINCT`) e insere registros "Não informado" para região e veículo, garantindo que nenhuma linha do fato fique órfã; valida nulos nas colunas-chave |
 | `05_analise_exploratoria.sql` | EDA | Estatísticas descritivas: contagem de linhas, modelos distintos, exposição zerada, min/max/média de prêmio, distribuição por categoria, sexo, faixa etária e região |
 | `06_analise_dados.sql` | Análise de negócio | View de macrorregião, sinistralidade total e por corte, ticket médio, ranking de sinistralidade, distribuição de indenizações por tipo de sinistro, top 10 modelos por ticket médio |
+| `07_insights_regioes_risco.sql` | Análise de negócio | Aprofundamento nas 05 regiões de maior sinistralidade |
 
 ## 🧠 Técnicas de T-SQL aplicadas
 
@@ -142,11 +143,62 @@ Jurídica: 76,96% das linhas estão em "Não informada" — esperado, já que fa
 Sem Informação (gênero não informado): 96,89% também caem em "Não informada" para faixa etária — sugere que, quando o gênero não é preenchido, a idade também costuma não ser
 
 
-##▶️ Como reproduzir
-Ter o SQL Server (ou Azure SQL / SQL Server Express) disponível
-Baixar os arquivos públicos da SUSEP referentes ao Casco Compreensivo (arquivo principal + arquivos de apoio de categoria, região, idade, sexo e veículo)
-Ajustar os caminhos de arquivo no 02_importar_dados.sql (BULK INSERT ... FROM 'C:\...') para o local onde os CSVs foram salvos
-Executar os scripts na ordem 01 → 06
+
+## O que os dados mostraram
+
+A sinistralidade média da carteira inteira é **76,92%** — esse é o número de referência para tudo que vem a seguir.
+
+### As cinco regiões que mais preocupam
+
+| Região | Sinistralidade | Desvio da média da carteira | % da indenização |
+|---|---|---|---|
+| Tocantins | 95,54% | +18,63 p.p. | 0,50% |
+| Bahia | 91,82% | +14,91 p.p. | 4,50% |
+| Piauí | 88,88% | +11,97 p.p. | 0,65% |
+| Pará | 87,50% | +10,59 p.p. | 1,20% |
+| Mato Grosso | 86,31% | +9,39 p.p. | 2,14% |
+
+Não é uma região isolada fora da curva — é uma faixa inteira degradando de forma parecida, o que já sinaliza que vale procurar um padrão comum em vez de tratar cada caso separadamente.
+
+**O primeiro ponto que me chamou atenção foi o tamanho real do problema.** Antes de soar alarme: essas cinco regiões juntas respondem por apenas ~9% da indenização total da carteira, e a Bahia sozinha — a maior delas — é só 4,5% do total. São bolsões de risco reais e localizados, não uma ameaça ao resultado agregado. Isso muda o tom da recomendação: vale corrigir, sem pânico.
+
+**O achado que mais me interessou foi que Bahia e Tocantins estão "doentes" de formas opostas.** Ao abrir a sinistralidade em frequência (sinistros por unidade de exposição) e severidade (custo médio por sinistro):
+
+| Região | Frequência de sinistro | Custo médio por sinistro |
+|---|---|---|
+| Bahia | 0,39 — a mais alta das cinco | R$ 3.760 — a mais baixa |
+| Tocantins | 0,25 — a mais baixa das cinco | R$ 7.357 — a mais alta |
+
+A Bahia tem muitos sinistros, mas cada um custa relativamente pouco. Tocantins tem poucos sinistros, mas caros quando acontecem — um perfil mais coerente com perda total ou roubo do que com colisão leve. São dois problemas de natureza diferente escondidos atrás do mesmo número de sinistralidade, e cada um pede uma resposta diferente.
+
+**O achado que eu não esperava foi um problema que atravessa regiões diferentes.** Ao abrir a sinistralidade por categoria de veículo dentro de cada uma das 5 regiões, o quadro completo ficou assim:
+
+| Categoria | BA - Bahia | MT - Mato Grosso | PA - Pará | PI - Piauí | TO - Tocantins |
+|---|---|---|---|---|---|
+| Motocicleta (nacional e importado) | 52,9% | 58,6% | 36,9% | 55,2% | 32,3% |
+| Ônibus (nacional e importado) | 29,2% | 10,0% | 3,9% | 30,2% | 1,7% |
+| Outros | 126,3% | 86,6% | **228,5%** | 65,8% | 76,1% |
+| Passeio importado | 125,7% | 103,4% | 70,0% | 144,4% | 82,7% |
+| Passeio nacional | 89,7% | 84,1% | 73,1% | 90,9% | 87,8% |
+| Pick-up (nacional e importado) | 90,4% | 93,2% | 99,2% | 88,9% | 101,6% |
+| Utilitários (nacional e importado) | 159,5% | 159,5% | 110,3% | 0,0% | 32,9% |
+| Veículo de Carga (nacional e importado) | 87,3% | 51,4% | 72,4% | 60,7% | **146,0%** |
+
+*(células em prejuízo técnico, acima de 100%, destacadas)*
+
+Isso confirmou a suspeita e trouxe um segundo nome para a lista: não é só "Utilitários" (159,5% na Bahia e no Mato Grosso, e ainda 110,3% no Pará — em prejuízo técnico em 3 das 5 regiões). "Passeio importado" segue exatamente o mesmo padrão: 125,7% na Bahia, 103,4% no Mato Grosso e 144,4% no Piauí — também em prejuízo em 3 das 5 regiões, com valores de magnitude parecida entre estados diferentes. Duas categorias distintas repetindo o mesmo comportamento em regiões diferentes é um sinal bem mais forte do que um caso isolado — reforça a hipótese de que o problema está na forma como essas categorias são precificadas, não na geografia onde elas aparecem.
+
+Vale registrar também dois pontos fora desse padrão principal, que têm outra natureza: "Outros" dispara para 228,5% no Pará — um valor tão destoante do resto da linha (65,8% a 126,3% nas demais regiões) que merece investigação à parte, possivelmente um efeito de baixo volume distorcendo o percentual, como já vimos acontecer no cruzamento sexo × idade. E "Veículo de Carga" só aparece em prejuízo em Tocantins (146,0%) — isolado, sem repetir nas outras 4 regiões, o que sugere que ali sim o problema pode ser mais específico do contexto local (frota de carga na região) do que da categoria em si.
+
+Também não encontrei um único tipo de sinistro dominando o resultado: na Bahia, Perda Total, Colisão e Roubo/Furto têm valores próximos entre si; no Mato Grosso, Perda Total e Colisão praticamente empatam. O problema é distribuído, o que sugere que a solução também precisa ser.
+
+**Por fim, um alerta sobre os próprios dados que preferi documentar em vez de esconder.** Ao cruzar sexo e faixa etária, alguns recortes de segurados marcados como "Sem Informação" mostraram sinistralidade acima de 20.000%. Não é erro de cálculo — é o efeito de uma base de prêmio quase nula dividindo um sinistro real (poucas apólices, um sinistro caro, e a divisão explode). Registrei isso explicitamente porque é o tipo de número que, sem contexto, parece um achado forte e na verdade é ruído estatístico. Nos recortes com volume confiável, o sinal real na Bahia é outro: segurados homens entre 26 e 45 anos rodam entre 107% e 123% de sinistralidade, pior que o observado no público feminino equivalente.
+
+## Decisões de qualidade de dados
+
+- Linhas com `exposicao1 = 0` foram mantidas na fato, mas identificadas separadamente na EDA — excluí-las mudaria as métricas de sinistralidade sem necessidade.
+- Valores vazios ou em notação científica foram tratados como zero, via `TRY_CAST` + `ISNULL`, de forma consciente e documentada.
+- Recortes com prêmio ou exposição muito baixos (como sexo "Sem Informação") produzem sinistralidade estatisticamente não confiável (>1000%) — documentado como limitação, não apresentado como achado.
 
 
 ## 📈 Dashboard (Power BI)
@@ -154,6 +206,26 @@ Executar os scripts na ordem 01 → 06
 Este projeto também inclui um **dashboard em Power BI**, construído sobre o modelo estrela e as métricas apresentadas neste repositório (medidas DAX de Sinistralidade, Ticket Médio e Exposição, entre outras). O dashboard faz parte do escopo completo do projeto.
 
 🔗 **Link do dashboard/repositório do Power BI:** *https://app.powerbi.com/view?r=eyJrIjoiZTllMGM3MWItZWVhMi00OWQ1LWJkM2MtYzYzYjRmYmRmNjIyIiwidCI6ImIyZTcyZjRjLWMxMzItNDc2NS1iZGMyLTRjNjNjYmQzZmU4YiJ9*
+
+## Camada de visualização (Power BI)
+
+O modelo `fato_casco` + dimensões alimenta o Power BI via Import. Principais medidas DAX:
+
+```dax
+Exposicao_Total = SUM(fato_casco[exposicao1])
+Premio_Total = SUM(fato_casco[premio1])
+Indenizacao_Total =
+    SUM(fato_casco[indeniz1]) + SUM(fato_casco[indeniz2]) +
+    SUM(fato_casco[indeniz3]) + SUM(fato_casco[indeniz4]) + SUM(fato_casco[indeniz9])
+Taxa_Sinistralidade = DIVIDE([Indenizacao_Total], [Premio_Total], 0) * 100
+Frequencia_Sinistro = DIVIDE([Qtde_Sinistros], [Exposicao_Total], 0)
+Severidade_Media = DIVIDE([Indenizacao_Total], [Qtde_Sinistros], 0)
+Sinistralidade_Media_Carteira = CALCULATE([Taxa_Sinistralidade], ALL(dim_regiao))
+Desvio_Media_Carteira = [Taxa_Sinistralidade] - [Sinistralidade_Media_Carteira]
+```
+
+Três painéis compõem a análise: visão geral da carteira (KPIs, prêmio/indenização por região, mapa de sinistros), sinistralidade por categoria e perfil do segurado, e um terceiro dedicado às cinco regiões mais críticas — de onde vieram os achados acima.
+
 
 
 ## 👤 Autor
