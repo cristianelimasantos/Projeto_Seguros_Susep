@@ -89,7 +89,7 @@ FROM fato_casco C LEFT JOIN  vw_regiao_macro R
 GROUP BY R.Regiao_Macro;
 
 
--- 6. Faixa de Sinistralidade
+-- 6. Classificação da Taxa de Sinistralidade por Descrição da Região
 
 WITH Tx_Sinistro AS (
 	SELECT
