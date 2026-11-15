@@ -79,7 +79,6 @@ Esquema estrela com a tabela fato `fato_casco` no centro, conectada a 5 dimensõ
 
 ## 📊 Principais insights (resultados reais das queries)
 
-> Números extraídos diretamente da execução dos scripts 05 e 06 (SSMS, execução concluída em 15/08/2026). Percentuais de sinistralidade por região/UF nos itens abaixo saem arredondados em duas casas *antes* da multiplicação por 100 (conforme a query do Script 06), o que gera valores "redondos" como 74.00% — é uma característica da consulta, não um erro de leitura.
 
 **Volume e qualidade da base**
 - Base final: **3.210.981 linhas** em `fato_casco`, cobrindo **8.186 modelos de veículo distintos**
